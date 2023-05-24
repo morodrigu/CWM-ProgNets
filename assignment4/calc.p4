@@ -43,6 +43,8 @@
 /*
  * Define the headers the program will recognize
  */
+ typedef bit<48> macAddr_t;
+ typedef bit<9>  egressSpec_t;
 
 /*
  * Standard Ethernet header
@@ -61,6 +63,7 @@ const bit<16> P4CALC_ETYPE = 0x1234;
 const bit<8>  P4CALC_P     = 0x50;   // 'P'
 const bit<8>  P4CALC_4     = 0x34;   // '4'
 const bit<8>  P4CALC_VER   = 0x01;   // v0.1
+
 const bit<8>  P4CALC_PLUS  = 0x2b;   // '+'
 const bit<8>  P4CALC_MINUS = 0x2d;   // '-'
 const bit<8>  P4CALC_AND   = 0x26;   // '&'
@@ -68,10 +71,17 @@ const bit<8>  P4CALC_OR    = 0x7c;   // '|'
 const bit<8>  P4CALC_CARET = 0x5e;   // '^'
 
 header p4calc_t {
-    bit<8>  op;
+    bit<8> P;
+    bit<8> four;
+    bit<8> ver;
+    bit<8> op;
+    bit<32> operand_a;
+    bit<32> operand_b;
+    bit<32> res;
 /* TODO
  * fill p4calc_t header with P, four, ver, op, operand_a, operand_b, and res
    entries based on above protocol header definition.
+   Operand a and b are the actual numbers that are being operated on, so those and the result are all 32 bits. The operation (op) will be one of the constants, so 8 bits.
  */
 }
 
@@ -91,6 +101,7 @@ struct headers {
  * declare the type, but there is no need to instantiate it,
  * because it is done "by the architecture", i.e. outside of P4 functions
  */
+
 
 struct metadata {
     /* In our case it is empty */
@@ -113,14 +124,12 @@ parser MyParser(packet_in packet,
 
     state check_p4calc {
         /* TODO: just uncomment the following parse block */
-        /*
-        transition select(packet.lookahead<p4calc_t>().p,
+        transition select(packet.lookahead<p4calc_t>().P,
         packet.lookahead<p4calc_t>().four,
         packet.lookahead<p4calc_t>().ver) {
             (P4CALC_P, P4CALC_4, P4CALC_VER) : parse_p4calc;
             default                          : accept;
         }
-        */
     }
 
     state parse_p4calc {
@@ -152,26 +161,41 @@ control MyIngress(inout headers hdr,
              by saving standard_metadata.ingress_port into
              standard_metadata.egress_spec
          */
+         macAddr_t tmp_mac;
+         
+         hdr.p4calc.res = result;
+         
+         tmp_mac = hdr.ethernet.dstAddr;
+         hdr.ethernet.dstAddr = hdr.ethernet.srcAddr;
+         hdr.ethernet.srcAddr = tmp_mac;
+         
+         standard_metadata.egress_spec = standard_metadata.ingress_port;
+         
     }
 
     action operation_add() {
         /* TODO call send_back with operand_a + operand_b */
+        send_back(hdr.p4calc.operand_a + hdr.p4calc.operand_b);
     }
 
     action operation_sub() {
         /* TODO call send_back with operand_a - operand_b */
+        send_back(hdr.p4calc.operand_a - hdr.p4calc.operand_b);
     }
 
     action operation_and() {
         /* TODO call send_back with operand_a & operand_b */
+        send_back(hdr.p4calc.operand_a & hdr.p4calc.operand_b);
     }
 
     action operation_or() {
         /* TODO call send_back with operand_a | operand_b */
+        send_back(hdr.p4calc.operand_a | hdr.p4calc.operand_b);
     }
 
     action operation_xor() {
         /* TODO call send_back with operand_a ^ operand_b */
+        send_back(hdr.p4calc.operand_a ^ hdr.p4calc.operand_b);
     }
 
     action operation_drop() {
