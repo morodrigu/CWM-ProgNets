@@ -1,23 +1,7 @@
 /* Tic tac toe
- * Protocol header:
- *
- *        0                1                  2              3
- * +----------------+----------------+----------------+---------------+
- * |      P         |       4        |     Version    |     C        |
- * +----------------+----------------+----------------+---------------+
- * |                               location                           |
- * +----------------+----------------+----------------+---------------+
- * |                         responselocation                         |
- * +----------------+----------------+----------------+---------------+
- * |                              Result                              |
- * +----------------+----------------+----------------+---------------+
- *
  * P is an ASCII Letter 'P' (0x50)
  * 4 is an ASCII Letter '4' (0x34)
  * Version is currently 0.1 (0x01)
- 
- 
- *C is counter (number of plays which have happened): if this is at 9 then all squares will have been filled.
  *
  * The device receives a packet, performs the requested operation, fills in the
  * result and if the move was valid, displays the result on the raspberry pi.
@@ -55,10 +39,16 @@ header tictactoe_t {
 	bit<8> P;
 	bit<8> four;
 	bit<8> ver;
-	bit<8> op;
-	bit<32> location;
-	bit<32> responselocation;
-	bit<32> res;
+	bit<8> s1;
+	bit<8> s2;
+	bit<8> s3;
+	bit<8> s4;
+	bit<8> s5;
+	bit<8> s6;
+	bit<8> s7;
+	bit<8> s8;
+	bit<9> s9;
+	bit<32> result;
 }
 
 //Struct of headers
@@ -71,8 +61,6 @@ struct headers {
 //Struct of metadata
 
 struct metadata {
-	bit <32> empty;
-	bit <32> emptyr;
 }
 
 
@@ -118,9 +106,7 @@ control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
 	
-	register<bit<64>>(9) state;
-	
-	action send_back(bit<64> result) {
+	action send_back(bit<32> result) {
     	        macAddr_t tmp_mac;
          
 		hdr.tictactoe.res = result;
@@ -132,95 +118,118 @@ control MyIngress(inout headers hdr,
 		standard_metadata.egress_spec = standard_metadata.ingress_port;
 	}    
 
-// Checking if the chosen spot is open
-// If the location in question (for either player 1 or 2) is labelled as empty, send back positive response (how?)
-// If location not empty, drop
-    
-	action checkopen() {
-		index = header.tictactoe.location - 1;
-		state.read(ctstate,index);
-		if (cstate == 0) {
-			meta.empty = 1;
-			state.write(index,1);
-		} else {
-		drop()
-		}
-		}
-	     
-     }
 
-	action checkopenresponse() {
-		index = header.tictactoe.responselocation - 1;
-		state.read(ctstate,index);
-		if (cstate == 0) {
-			meta.emptyr = 1;
-		} else {
-		meta.emptyr = 0;
-		}
-		}
-	
-	}
 
-     
-// Choosing coordinates for response
-// Starting with adding 1 unless the number is 9, in which case 1 will be chosen.
-
-	action response(){
-		if (header.tictactoe.location == 9) {
-			header.tictactoe.responselocation = 1;
-		} else {
-		 header.tictactoeresponse.location = header.tictactoe.location +1;
+	action operation1(){
+		send_back(1);
+		}
+	action operation2(){
+		send_back(2);
+		}
+	action operation3(){
+		send_back(3);
+		}
+	action operation4(){
+		send_back(4);
+		}
+	action operation5(){
+		send_back(5);
+		}
+	action operation6(){
+		send_back(6);
+		}
+	action operation7(){
+		send_back(7);
+		}
+	action operation8(){
+		send_back(8);
+		}
+	action operation9(){
+		send_back(9);
+		}
+	action winner1(){
+		send_back(10);
+		}
+	action winner2(){
+		send_back(11);
 		}
 		
-		index = header.tictactoe.responselocation - 1;
+	action firstempty(){
 		
-	// This bit could keep looping if none of the locations are empty. Need to have some kind of counter for number of plays??	
-		checkopenresponse();
-		if (meta.emptyr == 1) {
-			state.write(index,1);
-		} else {
-			response();
-		}
-	}
-
+		}										
+		
 // Drop action if invalid or spot taken
 
-    action drop() {
-        mark_to_drop(standard_metadata);
-    }
+	action drop() {
+	mark_to_drop(standard_metadata);
+	}
+
+
+
 	     
 //table
 
 	table toApply {
 	key = {
-            //??????: ?????;
+            {s1,s2,s3,s4,s5,s6,s7,s8,s9} : exact;
+//            s1 :exact;
+//            s2 :exact;
+//            s3 :exact;
+//            s4 :exact;
+//            s5 :exact;
+//            s6 :exact;
+//            s7 :exact;
+//            s8 :exact;
+//            s9 :exact;
         }
         
 	actions = {
-	send_back
-	checkopen;
-	checkopenresponse;
-	response;
+	send_back;
+	operation1;
+	operation2;
+	operation3;
+	operation4;
+	operation5;
+	operation6;
+	operation7;
+	operation8;
+	operation9;
+	winner1;
+	winner2;
+	firstempty;
 	drop;
 	}
 	
+        const default_action = firstempty();
+        const entries = {
+        	{1,0,0,0,0,0,0,0,0} : operation5;
+        	{0,1,0,0,0,0,0,0,0} : operation5;
+        	{0,0,1,0,0,0,0,0,0} : operation5;
+        	{0,0,0,1,0,0,0,0,0} : operation5;
+        	{0,0,0,0,1,0,0,0,0} : operation4;
+        	{0,0,0,0,0,1,0,0,0} : operation5;
+        	{0,0,0,0,0,0,1,0,0} : operation5;
+        	{0,0,0,0,0,0,0,1,0} : operation5;
+        	{0,0,0,0,0,0,0,0,1} : operation5;    	
+        	
+        }	
 	
 	
 	}
-	
-//Apply table only if tictactoe is valid AND if the slot is empty
+
 
 	apply {
         if (hdr.tictactoe.isValid()) {
-            	if(meta.empty ==1) {
             	toApply.apply();
-        	} else {
-        	drop();
-        	}
-	else {
-	operation_drop();
+	} else {
+	drop();
+        }
         }
 	}
+
+
+
+
 	
 // Egress processing
 
