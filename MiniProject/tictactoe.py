@@ -66,7 +66,7 @@ def main():
 		location = int(input('enter your location >'))
 		if location == "quit":
 			break
-		print(location)
+#		print(location)
 		state = location_parser(location, state)
 		print("your move:")
 		print(state[0], state[1], state[2])
