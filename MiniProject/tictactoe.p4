@@ -39,16 +39,16 @@ header tictactoe_t {
 	bit<8> P;
 	bit<8> four;
 	bit<8> ver;
-	bit<8> s1;
-	bit<8> s2;
-	bit<8> s3;
-	bit<8> s4;
-	bit<8> s5;
-	bit<8> s6;
-	bit<8> s7;
-	bit<8> s8;
-	bit<9> s9;
-	bit<32> result;
+	bit<32> s1;
+	bit<32> s2;
+	bit<32> s3;
+	bit<32> s4;
+	bit<32> s5;
+	bit<32> s6;
+	bit<32> s7;
+	bit<32> s8;
+	bit<32> s9;
+	bit<32> res;
 }
 
 //Struct of headers
@@ -155,6 +155,43 @@ control MyIngress(inout headers hdr,
 		}
 		
 	action firstempty(){
+		if (hdr.tictactoe.s1 == 0){
+			send_back(1);
+		} else {
+		if (hdr.tictactoe.s2 == 0){
+			send_back(2);
+		} else {
+		if (hdr.tictactoe.s3 == 0) {
+			send_back(3);
+		} else {
+		if (hdr.tictactoe.s4 == 0) {
+			send_back(4);
+		} else {		
+		if (hdr.tictactoe.s5 == 0) {
+			send_back(5);
+		} else {			
+		if (hdr.tictactoe.s6 == 0) {
+			send_back(6);
+		} else {		
+		if (hdr.tictactoe.s7 == 0) {
+			send_back(7);
+		} else {
+		if (hdr.tictactoe.s8 == 0) {
+			send_back(8);
+		} else {
+		if (hdr.tictactoe.s9 == 0) {
+			send_back(9);
+		} else {
+
+		}
+		}
+		}
+		}
+		}
+		}
+		}
+		}
+		}
 		
 		}										
 		
@@ -171,16 +208,15 @@ control MyIngress(inout headers hdr,
 
 	table toApply {
 	key = {
-            {s1,s2,s3,s4,s5,s6,s7,s8,s9} : exact;
-//            s1 :exact;
-//            s2 :exact;
-//            s3 :exact;
-//            s4 :exact;
-//            s5 :exact;
-//            s6 :exact;
-//            s7 :exact;
-//            s8 :exact;
-//            s9 :exact;
+            hdr.tictactoe.s1 :exact;
+            hdr.tictactoe.s2 :exact;
+            hdr.tictactoe.s3 :exact;
+            hdr.tictactoe.s4 :exact;
+            hdr.tictactoe.s5 :exact;
+            hdr.tictactoe.s6 :exact;
+            hdr.tictactoe.s7 :exact;
+            hdr.tictactoe.s8 :exact;
+            hdr.tictactoe.s9 :exact;
         }
         
 	actions = {
@@ -202,15 +238,18 @@ control MyIngress(inout headers hdr,
 	
         const default_action = firstempty();
         const entries = {
-        	{1,0,0,0,0,0,0,0,0} : operation5;
-        	{0,1,0,0,0,0,0,0,0} : operation5;
-        	{0,0,1,0,0,0,0,0,0} : operation5;
-        	{0,0,0,1,0,0,0,0,0} : operation5;
-        	{0,0,0,0,1,0,0,0,0} : operation4;
-        	{0,0,0,0,0,1,0,0,0} : operation5;
-        	{0,0,0,0,0,0,1,0,0} : operation5;
-        	{0,0,0,0,0,0,0,1,0} : operation5;
-        	{0,0,0,0,0,0,0,0,1} : operation5;    	
+        	(1,0,0,0,0,0,0,0,0) : operation5;
+        	(0,1,0,0,0,0,0,0,0) : operation5;
+        	(0,0,1,0,0,0,0,0,0) : operation5;
+        	(0,0,0,1,0,0,0,0,0) : operation5;
+        	(0,0,0,0,1,0,0,0,0) : operation4;
+        	(0,0,0,0,0,1,0,0,0) : operation5;
+        	(0,0,0,0,0,0,1,0,0) : operation5;
+        	(0,0,0,0,0,0,0,1,0) : operation5;
+        	(0,0,0,0,0,0,0,0,1) : operation5;
+        	
+        	(0,0,1,2,1,0,0,0,0) : operation7;
+        	(2,0,1,2,1,0,1,0,0) : winner1;  	
         	
         }	
 	
@@ -243,7 +282,7 @@ control MyEgress(inout headers hdr,
 
 control MyComputeChecksum(inout headers hdr, inout metadata meta) {
     apply { }
-
+}
 //Deparser
 
 control MyDeparser(packet_out packet, in headers hdr) {
